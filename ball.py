@@ -12,6 +12,8 @@ BLUE = (0, 0, 255)
 RED = (255, 0, 0)
 BLACK = (0,0,0)
 
+posi = []
+
 # Inicialización de Pygame
 pygame.init()
 
@@ -47,7 +49,7 @@ def reiniciar_juego(jugador):
     jugador['ball_stopped'] = False
 
 # Dibuja la pantalla del juego
-def dibujar_pantalla(screen, jugador):
+def dibujar_pantalla(screen, jugador, posi = []):
     screen.fill(WHITE)
 
     if jugador['show_line']:
@@ -55,12 +57,15 @@ def dibujar_pantalla(screen, jugador):
         line_end_x = jugador['ball_x'] + line_length * math.cos(jugador['angle_radians'])
         line_end_y = jugador['ball_y'] - line_length * math.sin(jugador['angle_radians'])
         pygame.draw.line(screen, RED, (jugador['ball_x'], jugador['ball_y']), (line_end_x, line_end_y), 2)
+    
         # Mostrar velocidad inicial cerca de la pelota
         font = pygame.font.Font(None, 20)
         speed_text = font.render(f"Velocidad: {int(jugador['initial_speed'])}", True, BLACK)
         speed_text_rect = speed_text.get_rect(center=(jugador['ball_x'], jugador['ball_y'] + 20))
         screen.blit(speed_text, speed_text_rect)
-
+    else:
+        for ball in posi:
+            pygame.draw.circle(screen, BLUE, (int(ball[0]), int(ball[1])), 2)
 
     pygame.draw.circle(screen, BLUE, (int(jugador['ball_x']), int(jugador['ball_y'])), jugador['ball_radius'])
     pygame.draw.circle(screen, RED, (int(jugador['target_x']), int(jugador['target_y'])), jugador['ball_radius'])
@@ -122,6 +127,7 @@ def jugar_juego():
 
     # Marca el tiempo de inicio
     start_time = time.time()
+    posi = []
 
     while True:
         for event in pygame.event.get():
@@ -135,6 +141,7 @@ def jugar_juego():
         if not jugador_actual['ball_stopped']:
             if keys[pygame.K_RETURN] and not jugador_actual['pressed_enter']:
                 # Si se presiona Enter y el movimiento no ha comenzado
+                posi = []
                 jugador_actual['pressed_enter'] = True
                 jugador_actual['angle_radians'] = math.radians(jugador_actual['angle_degrees'])
                 jugador_actual['initial_speed_x'] = jugador_actual['initial_speed'] * math.cos(jugador_actual['angle_radians'])
@@ -158,6 +165,11 @@ def jugar_juego():
             jugador_actual['show_line'] = False
             jugador_actual['ball_x'] += jugador_actual['initial_speed_x']
             jugador_actual['ball_y'] += jugador_actual['initial_speed_y']
+            try:
+                if jugador_actual['pressed_enter']:
+                    posi.append((jugador_actual['ball_x'],jugador_actual['ball_y']))
+            except:
+                pass
 
             # Aplica gravedad
             jugador_actual['initial_speed_y'] += jugador_actual['gravity']
@@ -187,7 +199,7 @@ def jugar_juego():
                 
 
         # Dibuja la pantalla solo para el jugador actual
-        dibujar_pantalla(screen, jugador_actual)
+        dibujar_pantalla(screen, jugador_actual, posi)
 
         # Agrega un pequeño retraso para ralentizar la visualización
         time.sleep(0.02)  # Ajusta el valor según la velocidad deseada
