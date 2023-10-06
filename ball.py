@@ -2,7 +2,7 @@ import pygame
 import math
 import time
 import random
-
+ 
 # Función para reiniciar el juego
 def reiniciar_juego():
     # Restablece las variables del juego
