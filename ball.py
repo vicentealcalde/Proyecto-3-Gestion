@@ -10,6 +10,7 @@ WIDTH, HEIGHT = 800, 600
 WHITE = (255, 255, 255)
 BLUE = (0, 0, 255)
 RED = (255, 0, 0)
+BLACK = (0,0,0)
 
 # Inicialización de Pygame
 pygame.init()
@@ -54,6 +55,11 @@ def dibujar_pantalla(screen, jugador):
         line_end_x = jugador['ball_x'] + line_length * math.cos(jugador['angle_radians'])
         line_end_y = jugador['ball_y'] - line_length * math.sin(jugador['angle_radians'])
         pygame.draw.line(screen, RED, (jugador['ball_x'], jugador['ball_y']), (line_end_x, line_end_y), 2)
+        # Mostrar velocidad inicial cerca de la pelota
+        font = pygame.font.Font(None, 20)
+        speed_text = font.render(f"Velocidad: {int(jugador['initial_speed'])}", True, BLACK)
+        speed_text_rect = speed_text.get_rect(center=(jugador['ball_x'], jugador['ball_y'] + 20))
+        screen.blit(speed_text, speed_text_rect)
 
 
     pygame.draw.circle(screen, BLUE, (int(jugador['ball_x']), int(jugador['ball_y'])), jugador['ball_radius'])
@@ -141,6 +147,11 @@ def jugar_juego():
                 # Aumenta el ángulo de disparo
                 jugador_actual['angle_degrees'] += 2
                 jugador_actual['angle_radians'] = math.radians(jugador_actual['angle_degrees'])
+            elif keys[pygame.K_LEFT]:
+                jugador_actual['initial_speed'] += 1
+            elif keys[pygame.K_RIGHT]:
+                jugador_actual['initial_speed'] -= 1
+
 
         if jugador_actual['pressed_enter'] and not jugador_actual['ball_stopped']:
             # Actualiza la posición de la pelota en función del tiempo si se ha presionado Enter
