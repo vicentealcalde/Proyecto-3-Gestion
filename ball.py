@@ -14,6 +14,21 @@ RED = (255, 0, 0)
 # Inicialización de Pygame
 pygame.init()
 
+def colision_circulos(jugador):
+    
+    y1 = jugador['ball_y']
+    x1 = jugador['ball_x']
+    r1 = jugador['ball_radius']
+    r2 = r1
+    x2 = jugador['target_x']
+    y2 = jugador['target_y']
+   
+    distancia = math.sqrt((x1 - x2)**2 + (y1 - y2)**2)
+    if distancia < r1 + r2:
+          return True
+    else:
+        return False
+    
 # Configuración de la ventana
 def configurar_ventana(width, height):
     return pygame.display.set_mode((width, height))
@@ -137,12 +152,28 @@ def jugar_juego():
             jugador_actual['initial_speed_y'] += jugador_actual['gravity']
 
             # Verifica si la pelota ha colisionado con el suelo
+            if colision_circulos(jugador_actual):
+                font = pygame.font.Font(None, 36)
+                text = font.render(f"Jugador {jugador_actual['numero']} Gana el juego", True, BLUE)
+                text_rect = text.get_rect(center=(WIDTH // 2, 50))
+                screen.blit(text, text_rect)
+                time.sleep(2)
+                sys.exit()
+
+                pygame.display.flip()
             if jugador_actual['ball_y'] >= HEIGHT - jugador_actual['ball_radius']:
                 print(f"La pelota del jugador {jugador_actual['numero']} ha alcanzado el suelo.")
-                time.sleep(2)  # Espera 2 segundos antes de reiniciar el juego
+                time.sleep(0.5)  # Espera 2 segundos antes de reiniciar el juego
                 reiniciar_juego(jugador_actual)
                 # Cambiar al otro jugador
-                jugador_actual['current'] = not jugador_actual['current']
+                if jugador_actual['numero'] == 1:
+                    jugadores[0]['current'] = False
+                    jugadores[1]['current'] = True
+                if jugador_actual['numero'] == 2:
+                    jugadores[1]['current'] = False
+                    jugadores[0]['current'] = True
+
+                
 
         # Dibuja la pantalla solo para el jugador actual
         dibujar_pantalla(screen, jugador_actual)
