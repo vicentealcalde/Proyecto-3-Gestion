@@ -1,169 +1,155 @@
 import pygame
 import math
 import time
-import random
- 
-# Función para reiniciar el juego
-def reiniciar_juego():
-    # Restablece las variables del juego
-    global ball_x, ball_y, angle_degrees, initial_speed, angle_radians, initial_speed_x, initial_speed_y, pressed_enter, show_line, current_player
-    ball_x = 50
-    ball_y = HEIGHT - 50
-    angle_degrees = 45
-    initial_speed = 30
-    angle_radians = math.radians(angle_degrees)
-    initial_speed_x = initial_speed * math.cos(angle_radians)
-    initial_speed_y = -initial_speed * math.sin(angle_radians)
-    pressed_enter = False
-    show_line = True
-    current_player = 1  # Comienza con el jugador 1
-
-# Inicialización de Pygame
-pygame.init()
+import sys
 
 # Dimensiones de la ventana
 WIDTH, HEIGHT = 800, 600
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Movimiento Parabólico")
 
 # Colores
 WHITE = (255, 255, 255)
 BLUE = (0, 0, 255)
 RED = (255, 0, 0)
 
-# Posición y dimensiones de la pelota
-ball_radius = 10
-ball_x = 50
-ball_y = HEIGHT - 50
-angle_degrees = 45  # Ángulo de disparo en grados
-initial_speed = 30   # Velocidad inicial
+# Inicialización de Pygame
+pygame.init()
 
-# Gravedad
-gravity = 0.5
+# Configuración de la ventana
+def configurar_ventana(width, height):
+    return pygame.display.set_mode((width, height))
 
-# Convierte el ángulo de disparo a radianes
-angle_radians = math.radians(angle_degrees)
+# Función para reiniciar el juego para un jugador
+def reiniciar_juego(jugador):
+    jugador['ball_x'] = 50 if jugador['numero'] == 1 else WIDTH - 50
+    jugador['ball_y'] = HEIGHT - 50
+    jugador['angle_degrees'] = 45
+    jugador['angle_radians'] = math.radians(jugador['angle_degrees'])
+    jugador['initial_speed'] = 30
+    jugador['gravity'] = 0.5
+    jugador['pressed_enter'] = False
+    jugador['show_line'] = True
+    jugador['ball_stopped'] = False
 
-# Velocidad inicial en las componentes x e y
-initial_speed_x = initial_speed * math.cos(angle_radians)
-initial_speed_y = -initial_speed * math.sin(angle_radians)
+# Dibuja la pantalla del juego
+def dibujar_pantalla(screen, jugador):
+    screen.fill(WHITE)
 
-# Coordenadas del objetivo en el otro lado del campo
-target_x = WIDTH - 50
-target_y = HEIGHT - 50
-target_radius = 15
+    if jugador['show_line']:
+        line_length = 20
+        line_end_x = jugador['ball_x'] + line_length * math.cos(jugador['angle_radians'])
+        line_end_y = jugador['ball_y'] - line_length * math.sin(jugador['angle_radians'])
+        pygame.draw.line(screen, RED, (jugador['ball_x'], jugador['ball_y']), (line_end_x, line_end_y), 2)
 
-# Variables del obstáculo
-obstacle_width = 60
-obstacle_height = 20
-obstacle_x = random.randint(0, WIDTH - obstacle_width)
-obstacle_y = random.randint(20, 150)
 
-# Variable para rastrear si se ha presionado Enter para comenzar el movimiento
-pressed_enter = False
-# Variable para rastrear si se ha presionado Enter para mostrar u ocultar la línea
-show_line = True
-# Variable para rastrear si la pelota está detenida por colisión con el obstáculo
-ball_stopped = False
-# Variable para rastrear al jugador actual (1 o 2)
-current_player = 1
+    pygame.draw.circle(screen, BLUE, (int(jugador['ball_x']), int(jugador['ball_y'])), jugador['ball_radius'])
+    pygame.draw.circle(screen, RED, (int(jugador['target_x']), int(jugador['target_y'])), jugador['ball_radius'])
 
-# Tiempo para mostrar la línea de inicio (en segundos)
-start_line_duration = 3.0  # Cambia este valor según tus preferencias
 
-# Marca el tiempo de inicio
-start_time = time.time()
+    font = pygame.font.Font(None, 36)
+    text = font.render(f"Jugador {jugador['numero']}", True, BLUE)
+    text_rect = text.get_rect(center=(WIDTH // 2, 50))
+    screen.blit(text, text_rect)
 
-# Bucle principal del juego
-while True:  # Bucle que reinicia el juego hasta que se anote un gol
-    running = True  # Bandera para el bucle del juego
-    while running:
+    pygame.display.flip()
+
+# Función principal del juego
+def jugar_juego():
+    # Configuración de jugadores
+    jugador1 = {
+        'numero': 1,
+        'ball_radius': 10,
+        'ball_x': 50,
+        'ball_y': HEIGHT - 50,
+        'angle_degrees': 45,
+        'angle_radians': math.radians(45),
+        'initial_speed': 30,
+        'gravity': 0.5,
+        'pressed_enter': False,
+        'show_line': True,
+        'ball_stopped': False,
+        'current': True,
+        'target_x': WIDTH - 50,
+        'target_y': HEIGHT - 50
+    }
+
+    jugador2 = {
+        'numero': 2,
+        'ball_radius': 10,
+        'ball_x': WIDTH - 50,
+        'ball_y': HEIGHT - 50,
+        'angle_degrees': 135,
+        'angle_radians': math.radians(45),
+        'initial_speed': 30,
+        'gravity': 0.5,
+        'pressed_enter': False,
+        'show_line': True,
+        'ball_stopped': False,
+        'current': False,
+        'target_x':  50,
+        'target_y': HEIGHT - 50
+    }
+
+    jugadores = [jugador1, jugador2]
+    screen = configurar_ventana(WIDTH, HEIGHT)
+    pygame.display.set_caption("Movimiento Parabólico")
+
+    reiniciar_juego(jugador1)
+    reiniciar_juego(jugador2)
+
+    # Tiempo para mostrar la línea de inicio (en segundos)
+    start_line_duration = 3.0  # Cambia este valor según tus preferencias
+
+    # Marca el tiempo de inicio
+    start_time = time.time()
+
+    while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                running = False
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_RETURN and not pressed_enter:
-                    # Si se presiona Enter y el movimiento no ha comenzado
-                    pressed_enter = True
-                    angle_radians = math.radians(angle_degrees)
-                    initial_speed_x = initial_speed * math.cos(angle_radians)
-                    initial_speed_y = -initial_speed * math.sin(angle_radians)
-                elif event.key == pygame.K_DOWN:
-                    # Reduce el ángulo de disparo
-                    angle_degrees -= 5
-                    angle_radians = math.radians(angle_degrees)
-                elif event.key == pygame.K_UP:
-                    # Aumenta el ángulo de disparo
-                    angle_degrees += 5
-                    angle_radians = math.radians(angle_degrees)
-                elif event.key == pygame.K_SPACE and not ball_stopped:
-                    # Realiza un disparo si se presiona la barra espaciadora y la pelota no está detenida
-                    current_player = 3 - current_player  # Cambia al otro jugador (1 <-> 2)
-                    pressed_enter = False  # Permite al nuevo jugador presionar Enter para disparar
+                pygame.quit()
+                sys.exit()
 
-        if pressed_enter and not ball_stopped:
+        # Solo el jugador actual procesa eventos de teclado
+        jugador_actual = jugadores[0] if jugadores[0]['current'] else jugadores[1]
+        keys = pygame.key.get_pressed()
+        if not jugador_actual['ball_stopped']:
+            if keys[pygame.K_RETURN] and not jugador_actual['pressed_enter']:
+                # Si se presiona Enter y el movimiento no ha comenzado
+                jugador_actual['pressed_enter'] = True
+                jugador_actual['angle_radians'] = math.radians(jugador_actual['angle_degrees'])
+                jugador_actual['initial_speed_x'] = jugador_actual['initial_speed'] * math.cos(jugador_actual['angle_radians'])
+                jugador_actual['initial_speed_y'] = -jugador_actual['initial_speed'] * math.sin(jugador_actual['angle_radians'])
+            elif keys[pygame.K_DOWN]:
+                # Reduce el ángulo de disparo
+                jugador_actual['angle_degrees'] -= 2
+                jugador_actual['angle_radians'] = math.radians(jugador_actual['angle_degrees'])
+            elif keys[pygame.K_UP]:
+                # Aumenta el ángulo de disparo
+                jugador_actual['angle_degrees'] += 2
+                jugador_actual['angle_radians'] = math.radians(jugador_actual['angle_degrees'])
+
+        if jugador_actual['pressed_enter'] and not jugador_actual['ball_stopped']:
             # Actualiza la posición de la pelota en función del tiempo si se ha presionado Enter
-            show_line = False
-            ball_x += initial_speed_x 
-            ball_y += initial_speed_y
+            jugador_actual['show_line'] = False
+            jugador_actual['ball_x'] += jugador_actual['initial_speed_x']
+            jugador_actual['ball_y'] += jugador_actual['initial_speed_y']
 
             # Aplica gravedad
-            initial_speed_y += gravity
+            jugador_actual['initial_speed_y'] += jugador_actual['gravity']
 
-            # Verifica si la pelota ha colisionado con el objetivo
-            distance_to_target = math.sqrt((ball_x - target_x)**2 + (ball_y - target_y)**2)
-            if distance_to_target < ball_radius + target_radius:
-                print(f"¡Gol del jugador {current_player}! La pelota ha alcanzado el objetivo.")
+            # Verifica si la pelota ha colisionado con el suelo
+            if jugador_actual['ball_y'] >= HEIGHT - jugador_actual['ball_radius']:
+                print(f"La pelota del jugador {jugador_actual['numero']} ha alcanzado el suelo.")
                 time.sleep(2)  # Espera 2 segundos antes de reiniciar el juego
-                reiniciar_juego()
+                reiniciar_juego(jugador_actual)
+                # Cambiar al otro jugador
+                jugador_actual['current'] = not jugador_actual['current']
 
-            # Verifica si la pelota ha colisionado con el obstáculo
-            if (obstacle_x < ball_x < obstacle_x + obstacle_width and
-                obstacle_y < ball_y < obstacle_y + obstacle_height):
-                initial_speed_x = 1
-                initial_speed_y = 1
-                print(f"La pelota del jugador {current_player} ha golpeado el obstáculo.")
-               
-
-        # Dibuja la pantalla
-        screen.fill(WHITE)
-
-        # Dibuja la línea roja que parte desde el centro del círculo
-        if show_line:
-            line_length = 20
-            line_end_x = ball_x + line_length * math.cos(angle_radians)
-            line_end_y = ball_y - line_length * math.sin(angle_radians)
-            pygame.draw.line(screen, RED, (ball_x, ball_y), (line_end_x, line_end_y), 2)
-
-        # Dibuja la pelota
-        pygame.draw.circle(screen, BLUE, (int(ball_x), int(ball_y)), ball_radius)
-
-        # Dibuja el objetivo
-        pygame.draw.circle(screen, RED, (int(target_x), int(target_y)), target_radius)
-
-        # Dibuja el obstáculo
-        pygame.draw.rect(screen, RED, (obstacle_x, obstacle_y, obstacle_width, obstacle_height))
-
-        # Dibuja el texto para indicar el jugador actual
-        font = pygame.font.Font(None, 36)
-        text = font.render(f"Jugador {current_player}", True, BLUE)
-        text_rect = text.get_rect(center=(WIDTH // 2, 50))
-        screen.blit(text, text_rect)
-
-        # Actualiza la pantalla
-        pygame.display.flip()
-
-        # Verifica si la pelota ha alcanzado el suelo
-        if ball_y >= HEIGHT - ball_radius:
-            print(f"La pelota del jugador {current_player} ha alcanzado el suelo.")
-            time.sleep(2)  # Espera 2 segundos antes de reiniciar el juego
-            reiniciar_juego()
+        # Dibuja la pantalla solo para el jugador actual
+        dibujar_pantalla(screen, jugador_actual)
 
         # Agrega un pequeño retraso para ralentizar la visualización
         time.sleep(0.02)  # Ajusta el valor según la velocidad deseada
 
-    # Salir del juego
-    pygame.quit()
-
-
+if __name__ == "__main__":
+    jugar_juego()
 
